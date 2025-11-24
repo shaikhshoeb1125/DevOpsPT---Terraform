@@ -13,6 +13,7 @@ locals {
 
 resource "azurerm_subnet" "subnets" {
   for_each             = var.subnets-details
+  
   name                 = each.value.name
   resource_group_name  = var.rg-name
   virtual_network_name = azurerm_virtual_network.main.name

@@ -1,4 +1,4 @@
-pterra-vms = {
+vms = {
   vm01 = {
     name           = "pterra-vm01"
     size           = "Standard_B1s"
@@ -6,7 +6,7 @@ pterra-vms = {
   }
   vm02 = {
     name           = "pterra-vm02"
-    size           = "Standard_B1s"
+    size           = "Standard_B2s"
     admin_username = "azureuser02"
   }
 }

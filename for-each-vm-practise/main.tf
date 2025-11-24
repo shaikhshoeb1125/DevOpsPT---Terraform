@@ -13,24 +13,24 @@ resource "azurerm_subnet" "pterra-subnet01" {
 }
 
 resource "azurerm_public_ip" "pterra-public-ip" {
-  for_each = var.pterra-vms
+  for_each = var.vms
 
   name                = "${each.value.name}-pip"
   location            = data.azurerm_resource_group.manually-created-rg.location
   resource_group_name = data.azurerm_resource_group.manually-created-rg.name
   allocation_method   = "Static"
-  sku = "Standard"
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_interface" "pterra-nic" {
-  for_each            = var.pterra-vms
+  for_each = var.vms
 
   name                = "${each.value.name}-nic"
   location            = data.azurerm_resource_group.manually-created-rg.location
   resource_group_name = data.azurerm_resource_group.manually-created-rg.name
 
   ip_configuration {
-    name                          = "${each.key}-ip-configuration"
+    name                          = "${each.value.name}-ip-configuration"
     subnet_id                     = azurerm_subnet.pterra-subnet01.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.pterra-public-ip[each.key].id
@@ -39,7 +39,7 @@ resource "azurerm_network_interface" "pterra-nic" {
 
 
 resource "azurerm_virtual_machine" "pterra-vms" {
-  for_each = var.pterra-vms
+  for_each = var.vms
 
   name                             = each.value.name
   location                         = data.azurerm_resource_group.manually-created-rg.location
