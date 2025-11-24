@@ -1,4 +1,4 @@
-variable "pterra-vms" {
+variable "vms" {
   type = map(object({
     name           = string
     size           = string
