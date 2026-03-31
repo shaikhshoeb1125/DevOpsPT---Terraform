@@ -7,14 +7,13 @@
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
-2. [Prerequisites](#2-prerequisites)
-3. [Beginner Examples](#3-beginner-examples)
-4. [Intermediate Examples](#4-intermediate-examples)
-5. [Advanced Examples](#5-advanced-examples)
-6. [Real-World Use Cases](#6-real-world-use-cases)
-7. [Best Practices](#7-best-practices)
-8. [for_each vs count](#8-for_each-vs-count)
-9. [Exercises](#9-exercises)
+2. [Beginner Examples](#2-beginner-examples)
+3. [Intermediate Examples](#3-intermediate-examples)
+4. [Advanced Examples](#4-advanced-examples)
+5. [Real-World Use Cases](#5-real-world-use-cases)
+6. [Best Practices](#6-best-practices)
+7. [for_each vs count](#7-for_each-vs-count)
+8. [Exercises](#8-exercises)
 
 ---
 
@@ -38,20 +37,26 @@ azurerm_resource_group.env["dev"]
 azurerm_resource_group.env["prod"]
 ```
 
-### for_each vs count — 30-second summary
+### `for_each` vs `count`
 
 ```hcl
+variable "envs" {
+  description = "List of environments"
+  type        = list(string)
+  default     = ["dev", "staging", "prod"]
+}
+
 # count — positional indices
-resource "azurerm_resource_group" "env" {
-  count    = 3
-  name     = "rg-${count.index}"   # rg-0, rg-1, rg-2
+resource "azurerm_resource_group" "count_example" {
+  count    = length(var.envs)
+  name     = "rg-${var.envs[count.index]}"   # rg-dev, rg-staging, rg-prod
   location = "East US"
 }
 
 # for_each — named keys
-resource "azurerm_resource_group" "env" {
-  for_each = toset(["dev", "staging", "prod"])
-  name     = "rg-${each.key}"      # rg-dev, rg-staging, rg-prod
+resource "azurerm_resource_group" "foreach_example" {
+  for_each = toset(var.envs)
+  name     = "rg-${each.key}"                # rg-dev, rg-staging, rg-prod
   location = "East US"
 }
 ```
@@ -68,38 +73,7 @@ resource "azurerm_resource_group" "env" {
 
 ---
 
-## 2. Prerequisites
-
-```bash
-# Azure CLI
-brew install azure-cli && az login
-
-# Terraform
-brew tap hashicorp/tap && brew install hashicorp/tap/terraform
-terraform -version    # >= 1.9 required
-
-# Set Azure credentials (or use az login for local dev)
-export ARM_SUBSCRIPTION_ID="..."
-export ARM_TENANT_ID="..."
-export ARM_CLIENT_ID="..."
-export ARM_CLIENT_SECRET="..."
-```
-
-**versions.tf (copy to each example folder):**
-
-```hcl
-terraform {
-  required_version = "~> 1.9"
-  required_providers {
-    azurerm = { source = "hashicorp/azurerm", version = "~> 4.0" }
-  }
-}
-provider "azurerm" { features {} }
-```
-
----
-
-## 3. Beginner Examples
+## 2. Beginner Examples
 
 ### Example 1 — Multiple Resource Groups (set of strings)
 
@@ -125,26 +99,6 @@ output "resource_group_ids" {
 }
 ```
 
-**How it works step by step:**
-
-```
-Input: { "dev", "staging", "prod" }
-         |           |          |
-         v           v          v
-     rg-dev      rg-staging   rg-prod
-
-State:
-  azurerm_resource_group.env["dev"]
-  azurerm_resource_group.env["staging"]
-  azurerm_resource_group.env["prod"]
-```
-
-```bash
-cd 01_beginner/example1_resource_groups
-terraform init && terraform plan
-# Expected: 3 resource groups to add
-```
-
 ---
 
 ### Example 2 — Multiple Storage Accounts (map of strings)
@@ -165,31 +119,23 @@ variable "storage_accounts" {
 resource "azurerm_storage_account" "this" {
   for_each = var.storage_accounts
 
-  name                     = "st${each.key}tutorial001"  # globally unique name
-  resource_group_name      = azurerm_resource_group.this.name
-  location                 = azurerm_resource_group.this.location
+  name                     = "st${each.key}tutorial001"  
+  resource_group_name      = "rg-storage-tutorial"
+  location                 = "West Europe"
   account_tier             = "Standard"
   account_replication_type = each.value  # LRS / GRS / ZRS from map value
 }
 ```
 
-| Expression | For key "logs" |
-|---|---|
-| `each.key` | `"logs"` |
-| `each.value` | `"Standard_LRS"` |
-| Resource name in Azure | `"stlogstutorial001"` |
-
 ---
 
-## 4. Intermediate Examples
+## 3. Intermediate Examples
 
 ### Example 3 — VNets with Subnets (nested map + flattening)
 
 **File:** `02_intermediate/example3_vnets_subnets/main.tf`
 
 **The challenge:** Subnets live *inside* VNets in the variable, but a Terraform resource block cannot be nested inside another resource block.
-
-**Solution — flatten into a local map:**
 
 ```hcl
 variable "virtual_networks" {
@@ -217,7 +163,7 @@ resource "azurerm_virtual_network" "this" {
   for_each            = var.virtual_networks
   name                = each.key
   location            = each.value.location
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = "rg-network"
   address_space       = each.value.address_space
 }
 
@@ -239,82 +185,89 @@ locals {
 resource "azurerm_subnet" "this" {
   for_each             = local.subnets_flat
   name                 = each.value.subnet_key
-  resource_group_name  = azurerm_resource_group.this.name
+  resource_group_name  = "rg-network"
   virtual_network_name = each.value.vnet_key
   address_prefixes     = [each.value.subnet_val.address_prefix]
   depends_on           = [azurerm_virtual_network.this]
 }
 ```
 
-**Visual model:**
-```
-Variable (nested)                Locals (flat)
------------------                -------------
-vnet-frontend                    "vnet-frontend/snet-web"
-  snet-web: 10.10.1.0/24   -->   "vnet-frontend/snet-app"
-  snet-app: 10.10.2.0/24
-```
+**Step-by-step logic for `locals` and `for` loop:**
+1. **Why `locals`?** Terraform's `for_each` can only accept flat maps or sets. We use `locals` to compute a new data structure in memory to reshape our nested variable into a single flat map.
+2. **Why the `for` loop?** The `for` expression runs a double loop here. It iterates over every VNet (`vnet_val`), and then iterates over every subnet inside it (`subnet_val`). 
+3. **The specific output:** By combining strings like `"${vnet_key}/${subnet_key}"`, we guarantee unique primary keys in the new map dictating the creation of each subnet resource later (`for_each = local.subnets_flat`).
 
 ---
 
-### Example 4 — AKS Clusters (complex objects + optional())
+### Example 4 — Linux Virtual Machines (complex objects + optional())
 
 **File:** `02_intermediate/example4_complex_maps/main.tf`
 
+This example uses Azure Linux VMs to show how `optional(type, default)` works in Terraform 1.3+.
+
 ```hcl
-variable "aks_clusters" {
+variable "virtual_machines" {
+  description = "Map of VM name to detailed schema configuration."
   type = map(object({
-    kubernetes_version = string
-    default_node_pool  = object({
-      name       = string
-      node_count = number
-      vm_size    = string
-    })
-    # optional() = Terraform 1.3+; caller can omit, gets the default
-    network_profile = optional(object({
-      network_plugin = string
-      dns_service_ip = string
-      service_cidr   = string
+    size           = string
+    admin_username = string
+    
+    # optional() allows callers to omit 'os_disk', substituting the defaults automatically.
+    os_disk = optional(object({
+      caching              = string
+      storage_account_type = string
     }), {
-      network_plugin = "azure"
-      dns_service_ip = "10.100.0.10"
-      service_cidr   = "10.100.0.0/16"
+      caching              = "ReadWrite"
+      storage_account_type = "Standard_LRS"
     })
+    
     tags = optional(map(string), {})
   }))
+  
   default = {
-    "aks-dev" = {
-      kubernetes_version = "1.29"
-      default_node_pool  = { name = "default", node_count = 2, vm_size = "Standard_B2s" }
+    "vm-frontend" = {
+      size           = "Standard_B2s"
+      admin_username = "azureuser"
+      # Notice we omitted os_disk - defaults applied automatically!
     }
-    "aks-prod" = {
-      kubernetes_version = "1.29"
-      default_node_pool  = { name = "default", node_count = 5, vm_size = "Standard_D4s_v3" }
+    "vm-backend" = {
+      size           = "Standard_D2s_v3"
+      admin_username = "adminuser"
+      os_disk = {
+        caching              = "ReadOnly"
+        storage_account_type = "Premium_LRS"
+      }
       tags = { critical = "true" }
     }
   }
 }
 
-resource "azurerm_kubernetes_cluster" "this" {
-  for_each            = var.aks_clusters
+resource "azurerm_linux_virtual_machine" "this" {
+  for_each            = var.virtual_machines
   name                = each.key
-  kubernetes_version  = each.value.kubernetes_version
-  resource_group_name = azurerm_resource_group.this.name
-  location            = var.location
-  dns_prefix          = each.key
+  resource_group_name = "rg-vms"
+  location            = "East US"
+  size                = each.value.size
+  admin_username      = each.value.admin_username
+  disable_password_authentication = true
+  
+  admin_ssh_key {
+    username   = each.value.admin_username
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+  
+  network_interface_ids = [ azurerm_network_interface.this[each.key].id ]
 
-  default_node_pool {
-    name       = each.value.default_node_pool.name
-    node_count = each.value.default_node_pool.node_count
-    vm_size    = each.value.default_node_pool.vm_size
+  os_disk {
+    caching              = each.value.os_disk.caching
+    storage_account_type = each.value.os_disk.storage_account_type
   }
 
-  identity { type = "SystemAssigned" }
-
-  network_profile {
-    network_plugin = each.value.network_profile.network_plugin
-    dns_service_ip = each.value.network_profile.dns_service_ip
-    service_cidr   = each.value.network_profile.service_cidr
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
   }
 
   tags = merge({ managed_by = "terraform" }, each.value.tags)
@@ -323,39 +276,41 @@ resource "azurerm_kubernetes_cluster" "this" {
 
 ---
 
-## 5. Advanced Examples
+## 4. Advanced Examples
 
 ### Example 5 — `for_each` on a Module Call
 
 **Files:** `03_advanced/example5_module_foreach/`
 
 ```hcl
+variable "environments" {
+  type = map(object({
+    location      = string
+    address_space = string
+    subnets       = list(object({ name = string, newbits = number, netnum = number }))
+  }))
+  default = {
+    "dev" = {
+      location      = "East US"
+      address_space = "10.10.0.0/16"
+      subnets       = [{ name = "web", newbits = 8, netnum = 1 }]
+    }
+  }
+}
+
 # Root module — one network stack per environment
 module "network" {
   source   = "./modules/network"
-  for_each = var.environments   # map of environment configs
+  for_each = var.environments   # loops over every dev/staging/prod object map
 
   env_name      = each.key
   location      = each.value.location
   address_space = each.value.address_space
   subnets       = each.value.subnets
 }
-
-# Access module outputs:
-output "vnet_ids_by_env" {
-  value = { for env, mod in module.network : env => mod.vnet_id }
-}
 ```
 
-State addressing with module for_each:
-```
-module.network["dev"].azurerm_resource_group.this
-module.network["dev"].azurerm_virtual_network.this
-module.network["prod"].azurerm_resource_group.this
-module.network["prod"].azurerm_virtual_network.this
-```
-
-The child module (`modules/network/main.tf`) uses `cidrsubnet()` to derive subnet CIDRs:
+Inside the child module (`modules/network/main.tf`), `for`-loops process the custom CIDRs calculation locally:
 
 ```hcl
 locals {
@@ -368,9 +323,12 @@ resource "azurerm_subnet" "this" {
   for_each         = local.subnet_map
   name             = "snet-${each.key}"
   address_prefixes = [each.value.address_prefix]
-  # cidrsubnet("10.10.0.0/16", 8, 1) -> "10.10.1.0/24"
 }
 ```
+
+**Step-by-step logic for `locals` and `for` mapping block in child module:**
+1. **Why `locals`?** Once we receive an array list variable (`var.subnets`), we can't reliably loop through items in `for_each` without converting it to a `map`.
+2. **Why the `for` loop?** The expression loops over the array `var.subnets`, reading each object, and computes physical subnet IPs via Terraform's `cidrsubnet` function dynamically. It outputs an easily digestible schema mapping name identifiers to their parsed CIDR values!
 
 ---
 
@@ -382,10 +340,6 @@ resource "azurerm_subnet" "this" {
 variable "environment" {
   type    = string
   default = "dev"
-  validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Must be dev, staging, or prod."
-  }
 }
 
 variable "all_storage_accounts" {
@@ -398,7 +352,7 @@ variable "all_storage_accounts" {
 }
 
 locals {
-  # Filter: only keep entries matching the active environment
+  # Filter: only keep entries matching the active workspace
   filtered_storage = {
     for name, cfg in var.all_storage_accounts :
     name => cfg
@@ -414,7 +368,9 @@ resource "azurerm_storage_account" "this" {
 }
 ```
 
-> **TIP:** Set `TF_VAR_environment=prod` and only prod accounts are planned. No conditional logic in the resource blocks — it's all in the `locals` filter.
+**Step-by-step logic for `locals` filter loop:**
+1. **Why `locals`?** We aim to separate business logic (evaluating what accounts to skip safely or deploy conditionally) from declarative block deployment attributes (`resource "xyz"`).
+2. **Why the `for` along with `if` check?** This reads every object in `all_storage_accounts`. It employs a conditional statement (`if cfg.environment == var.environment`). If false, the item is entirely discarded from evaluating into `filtered_storage`. 
 
 ---
 
@@ -426,33 +382,16 @@ resource "azurerm_storage_account" "this" {
 variable "network_security_groups" {
   type = map(object({
     rules = list(object({
-      name                       = string
-      priority                   = number
-      direction                  = string
-      access                     = string
-      protocol                   = string
-      source_port_range          = string
-      destination_port_range     = string
-      source_address_prefix      = string
-      destination_address_prefix = string
+      name                   = string
+      priority               = number
+      destination_port_range = string
     }))
   }))
   default = {
     "nsg-web" = {
       rules = [
-        { name = "allow-http",  priority = 100, direction = "Inbound", access = "Allow",
-          protocol = "Tcp", source_port_range = "*", destination_port_range = "80",
-          source_address_prefix = "*", destination_address_prefix = "*" },
-        { name = "allow-https", priority = 110, direction = "Inbound", access = "Allow",
-          protocol = "Tcp", source_port_range = "*", destination_port_range = "443",
-          source_address_prefix = "*", destination_address_prefix = "*" },
-      ]
-    }
-    "nsg-data" = {
-      rules = [
-        { name = "deny-all", priority = 4096, direction = "Inbound", access = "Deny",
-          protocol = "*", source_port_range = "*", destination_port_range = "*",
-          source_address_prefix = "*", destination_address_prefix = "*" },
+        { name = "http",  priority = 100, destination_port_range = "80" },
+        { name = "https", priority = 110, destination_port_range = "443" }
       ]
     }
   }
@@ -461,42 +400,31 @@ variable "network_security_groups" {
 resource "azurerm_network_security_group" "this" {
   for_each            = var.network_security_groups  # outer: one NSG
   name                = each.key
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  location            = "East US"
+  resource_group_name = "rg-network"
 
   dynamic "security_rule" {             # inner: one rule per list item
     for_each = each.value.rules
     content {
-      name                       = security_rule.value.name
-      priority                   = security_rule.value.priority
-      direction                  = security_rule.value.direction
-      access                     = security_rule.value.access
-      protocol                   = security_rule.value.protocol
-      source_port_range          = security_rule.value.source_port_range
-      destination_port_range     = security_rule.value.destination_port_range
-      source_address_prefix      = security_rule.value.source_address_prefix
-      destination_address_prefix = security_rule.value.destination_address_prefix
+      name                   = security_rule.value.name
+      priority               = security_rule.value.priority
+      destination_port_range = security_rule.value.destination_port_range
+      direction              = "Inbound"
+      access                 = "Allow"
+      protocol               = "Tcp"
+      # ... required networking fields here
     }
   }
 }
 ```
 
-**Two-level loop visualization:**
-```
-Outer for_each (NSG)       Inner dynamic (rules)
---------------------       ---------------------
-nsg-web              -->   rule: allow-http  (priority 100)
-                           rule: allow-https (priority 110)
-nsg-data             -->   rule: deny-all    (priority 4096)
-```
-
 ---
 
-## 6. Real-World Use Cases
+## 5. Real-World Use Cases
 
 ### UC-1: Multi-Environment Deployments
 
-**Problem:** Dev needs cheap VMs; prod needs powerful, HA ones. Managing separate configs leads to configuration drift.
+**Problem:** Managing dev, staging, and prod config manually causes deployment drift.
 
 ```hcl
 variable "environments" {
@@ -512,6 +440,7 @@ resource "azurerm_service_plan" "env" {
   name         = "asp-myapp-${each.key}"
   sku_name     = each.value.plan_sku
   worker_count = each.value.worker_count
+  os_type      = "Linux"
 }
 ```
 
@@ -519,9 +448,18 @@ resource "azurerm_service_plan" "env" {
 
 ### UC-2: Multi-Region Rollout
 
-**Problem:** Deploying identical infra to 3+ regions — copy-paste is error-prone.
+**Problem:** Deploying identical infra to 3+ regions manually is tedious.
 
 ```hcl
+variable "regions" {
+  type = map(object({ cidr_offset = number }))
+  default = {
+    eastus = { cidr_offset = 0 }
+    westeurope = { cidr_offset = 1 }
+    southeastasia = { cidr_offset = 2 }
+  }
+}
+
 locals {
   region_cidrs = {
     for region, cfg in var.regions :
@@ -538,11 +476,15 @@ resource "azurerm_virtual_network" "region" {
 }
 ```
 
+**Step-by-step logic:**
+1. **Why `locals`?** Reusing static IP logic directly in resource properties invites error duplication.
+2. **Why `for`?** By looping over `var.regions`, we use Terraform's internal math utility module `cidrsubnet()` returning specific non-overlapping `/16` addresses mapped exactly to each region.
+
 ---
 
 ### UC-3: RBAC Assignments at Scale
 
-**Problem:** 20 role assignments across 5 subscriptions — manual Azure Portal ACL management is a nightmare.
+**Problem:** Handling repetitive Access-Control lists limits maintainability across many environments.
 
 ```hcl
 variable "role_assignments" {
@@ -551,23 +493,41 @@ variable "role_assignments" {
     role_definition_name = string
     principal_id         = string
   }))
+  default = {
+    "data-team-rg-reader" = {
+      scope                = "/subscriptions/0000-0000/resourceGroups/rg-data"
+      role_definition_name = "Reader"
+      principal_id         = "11111111-1111-1111-1111-111111111111"
+    }
+  }
 }
+
 resource "azurerm_role_assignment" "this" {
   for_each             = var.role_assignments
   scope                = each.value.scope
   role_definition_name = each.value.role_definition_name
   principal_id         = each.value.principal_id
 }
-# Adding a new assignment = one map entry. No logic changes.
 ```
 
 ---
 
 ### UC-4: Tag Standardisation
 
-**Problem:** Finance can't do cost allocation because resources have inconsistent tags.
+**Problem:** Inconsistent tags on infrastructure.
 
 ```hcl
+variable "workloads" {
+  type = map(object({
+    cost_center = string
+    owner       = string
+    environment = string
+  }))
+  default = {
+    "payments-api" = { cost_center = "CC-123", owner = "platform", environment = "prod" }
+  }
+}
+
 locals {
   mandatory_tags = { managed_by = "terraform", last_modified = "2025-01-01" }
   workload_tags = {
@@ -582,203 +542,47 @@ locals {
 }
 resource "azurerm_resource_group" "workload" {
   for_each = var.workloads
-  tags     = local.workload_tags[each.key]  # full merged tag set
+  name     = "rg-${each.key}"
+  location = "East US"
+  tags     = local.workload_tags[each.key]  # full merged tag set enforcement
 }
 ```
+
+**Step-by-step logic:**
+1. **Why `locals`?** Constant baseline tags (`mandatory_tags`) apply company-wide standard defaults avoiding human error replication.
+2. **Why `for`?** By iterating all declared workloads sequentially via user logic, we construct a new dataset mapping merging (`merge()`) both baseline requirements alongside user inputs guaranteeing every deployed RG will be 100% compliant!
 
 ---
 
-### UC-5: Multi-Tenant SaaS Isolation
-
-Same file as UC-4. Adding one map entry provisions an isolated resource group, storage account, and Key Vault — under 30 seconds.
-
-```hcl
-variable "tenants" {
-  type = map(object({ location = string, tier = string }))
-  default = {
-    "contoso"  = { location = "East US",    tier = "pro" }
-    "fabrikam" = { location = "West Europe", tier = "enterprise" }
-  }
-}
-
-# Adding "northwind" = one map entry -> RG + SA + Key Vault created automatically
-resource "azurerm_key_vault" "tenant" {
-  for_each = var.tenants
-  name     = "kv-${substr(each.key, 0, 10)}-001"
-  sku_name = each.value.tier == "enterprise" ? "premium" : "standard"
-}
-```
-
----
-
-## 7. Best Practices
-
-### Resource block ordering (terraform-skill standard)
-
-```hcl
-resource "azurerm_virtual_network" "this" {
-  for_each = var.virtual_networks    # 1. for_each FIRST (blank line after)
-
-  name                = each.key    # 2. other arguments
-  location            = each.value.location
-  resource_group_name = azurerm_resource_group.this.name
-  address_space       = each.value.address_space
-
-  tags = { managed_by = "terraform" }  # 3. tags second-to-last
-
-  lifecycle {                           # 4. lifecycle at very end (if needed)
-    create_before_destroy = false
-  }
-}
-```
+## 6. Best Practices
 
 ### DO
 
 | Practice | Reason |
 |---|---|
-| Use **stable, descriptive keys** | Keys are state addresses; changing them forces destroy+create |
-| Declare `description` on every variable | Required by terraform-best-practices.com |
-| Use `map(object(...))` not `map(any)` | Type-checks at `terraform validate` time |
-| Use `optional(type, default)` for new attrs | Backward-compatible schema evolution |
-| **Flatten nested structures in `locals`** | Keeps resource blocks clean |
-| Use `moved` block when renaming keys | Renames in state without destroying resources |
+| Use **descriptive, stable keys** | Keys are state addresses; changing them forces destroy+create. |
+| Use `map(object(...))` not `map(any)` | Prevents unexpected type coercion logic errors when testing. |
+| Use `optional(type, default)` | Excellent backwards compatibility behavior in newer schemas. |
+| **Flatten structures in `locals`** | Allows your resource definition to read elegantly cleanly. |
 
 ### DON'T
 
 | Anti-pattern | Problem |
 |---|---|
-| Integer string keys: `"0"`, `"1"` | Same instability as `count` |
-| Use computed/unknown values in `for_each` | Terraform must know the full keyset at plan time |
-| Mix `count` and `for_each` on the same resource | Not permitted by Terraform |
-| Change a key without `moved` block | Destroy + recreate the resource |
-| Use `for_each` for a simple bool toggle | Use `count = condition ? 1 : 0` instead |
+| Integer string keys | Overrides the main benefit of keys, falling apart if indices drop. |
+| Computed/unknown collections | Terraform requires the full collection evaluated prior to API Planning. |
+| Missing `moved` mapping | Terraform assumes deletions rather than safe, logical renames. |
 
-### Key rename pitfall and fix
-
-```hcl
-# BEFORE: key was "vnet01"
-# AFTER:  key is "vnet-primary"
-# Without moved block -> destroy vnet01, create vnet-primary (DANGEROUS!)
-
-# WITH moved block -> rename in state only, no downtime
-moved {
-  from = azurerm_virtual_network.this["vnet01"]
-  to   = azurerm_virtual_network.this["vnet-primary"]
-}
-```
-
----
-
-## 8. `for_each` vs `count`
-
-### Side-by-side comparison
-
-```hcl
-# count — list-based, positional
-variable "envs" { default = ["dev", "staging", "prod"] }
-resource "azurerm_resource_group" "count_ex" {
-  count    = length(var.envs)
-  name     = "rg-${var.envs[count.index]}"
-  location = "East US"
-}
-# Remove "staging" -> prod shifts from index 2 to index 1 -> RECREATED!
-
-# for_each — map/set-based, named
-resource "azurerm_resource_group" "foreach_ex" {
-  for_each = toset(var.envs)
-  name     = "rg-${each.key}"
-  location = "East US"
-}
-# Remove "staging" -> only env["staging"] is destroyed -> prod is safe
-```
-
-### Decision matrix
+## 7. `for_each` vs `count`
 
 | Scenario | Use |
 |---|---|
-| Boolean on/off toggle | `count = condition ? 1 : 0` |
-| N identical resources | `count = N` |
-| Named collection | `for_each = map` |
-| Items may be removed | `for_each = set/map` |
-| Different config per item | `for_each = map(object)` |
-| Reference resource later by name | `for_each` |
+| Binary Boolean Toggle logic | `count = condition ? 1 : 0` |
+| Multiple indistinguishable clones | `count = N` |
+| Readily Named collection maps | `for_each = map` |
+| Items needing future list deletion  | `for_each = set/map` |
+| Different attributes mapped | `for_each = map(object)` |
 
----
+## 8. Exercises
 
-## 9. Hands-On Exercises
-
-> **Starter code:** `05_exercises/exercises.tf` (has TODO comments)
-> **Solutions:** `05_exercises/solutions/solutions.tf`
-
-| # | Task | Skill practiced | Difficulty |
-|---|---|---|---|
-| 1 | Deploy 3 resource groups from a `set(string)` | Basic `for_each`, `each.key` | ⭐ |
-| 2 | Deploy storage accounts from a `map(string)` | `each.value`, outputs | ⭐⭐ |
-| 3 | Deploy VNets + subnets from a nested map | Flattening with `locals` | ⭐⭐⭐ |
-| 4 | Deploy only "active" RGs from a complete catalogue | Filtering with `if` | ⭐⭐⭐⭐ |
-| 5 | One NSG per tier with per-port rules | `for_each` + `dynamic` | ⭐⭐⭐⭐⭐ |
-
-### Exercise 4 hint
-
-```hcl
-# Filter map to active=true before passing to for_each
-locals {
-  active_rgs = {
-    for k, v in var.all_rgs : k => v if v.active
-  }
-}
-resource "azurerm_resource_group" "active" {
-  for_each = local.active_rgs
-  name     = each.key
-  location = each.value.location
-}
-```
-
-### Exercise 5 hint
-
-```hcl
-resource "azurerm_network_security_group" "tiers" {
-  for_each = var.tiers    # outer: one NSG
-
-  dynamic "security_rule" {
-    for_each = each.value.allowed_ports  # inner: one rule per port number
-    content {
-      name                       = "allow-port-${security_rule.value}"
-      priority                   = 100 + security_rule.key   # key = list index
-      destination_port_range     = tostring(security_rule.value)
-      # ...
-    }
-  }
-}
-```
-
----
-
-## Directory Layout
-
-```
-for_each_rw_examples/
-├── versions.tf
-├── TUTORIAL.md
-├── 01_beginner/
-│   ├── example1_resource_groups/     # for_each over set of strings
-│   └── example2_storage_accounts/   # for_each over map(string)
-├── 02_intermediate/
-│   ├── example3_vnets_subnets/       # nested map + flattening
-│   └── example4_complex_maps/       # AKS with optional() typed objects
-├── 03_advanced/
-│   ├── example5_module_foreach/      # for_each on module call
-│   │   └── modules/network/
-│   ├── example6_conditional_filtered/ # filtered maps
-│   └── example7_dynamic_blocks/     # for_each + dynamic blocks
-├── 04_real_world/
-│   ├── uc1_multi_environment.tf
-│   ├── uc2_multi_region.tf
-│   ├── uc3_rbac_at_scale.tf
-│   ├── uc4_and_uc5_tags_and_tenants.tf
-│   └── versions.tf
-└── 05_exercises/
-    ├── exercises.tf
-    ├── versions.tf
-    └── solutions/solutions.tf
-```
+See `05_exercises/exercises.tf` mapped correctly in the file base directory path to run 5 hands-on evaluations spanning Beginner and Advanced syntax implementations!
