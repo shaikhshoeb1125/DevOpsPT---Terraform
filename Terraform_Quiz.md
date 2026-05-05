@@ -2,7 +2,7 @@
 
 ## Beginner Level
 
-**1. Your team reviewed the Terraform plan and everything looks correct. You now want to actually create the infrastructure on AWS. Which command executes the changes?**
+**1. Your team reviewed the Terraform plan and everything looks correct. You now want to actually create the infrastructure on Azure. Which command executes the changes?**
 - A) terraform deploy
 - B) terraform execute
 - C) terraform apply
@@ -17,7 +17,7 @@
 
 <hr>
 
-**2. Your team writes a Terraform file to create an AWS S3 bucket. You want to reuse the bucket name in multiple places without repeating it. Which Terraform feature lets you define a named value once and reference it throughout your configuration?**
+**2. Your team writes a Terraform file to create an Azure Storage Account container. You want to reuse the bucket name in multiple places without repeating it. Which Terraform feature lets you define a named value once and reference it throughout your configuration?**
 - A) Data Source
 - B) Module
 - C) Variable
@@ -32,7 +32,7 @@
 
 <hr>
 
-**3. Your team wants to query information about an existing AWS VPC that was not created by Terraform so you can reference its ID in your configuration. Which Terraform feature reads existing infrastructure without managing it?**
+**3. Your team wants to query information about an existing Azure VNet that was not created by Terraform so you can reference its ID in your configuration. Which Terraform feature reads existing infrastructure without managing it?**
 - A) Variable
 - B) Data Source
 - C) Module
@@ -42,7 +42,7 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> B (Data Source)
 <br/>
-<b>Explanation:</b> Terraform data sources allow you to fetch information about existing resources that are managed outside of Terraform. For example, `aws_vpc` data source lets you look up a VPC by its ID or tags and use its attributes in your configuration without taking over management of that resource.
+<b>Explanation:</b> Terraform data sources allow you to fetch information about existing resources that are managed outside of Terraform. For example, `azurerm_virtual_network` data source lets you look up a VNet by its ID or tags and use its attributes in your configuration without taking over management of that resource.
 </details>
 
 <hr>
@@ -62,7 +62,7 @@
 
 <hr>
 
-**5. Your Terraform configuration references AWS as the cloud provider. Before you can run `terraform plan`, Terraform needs to download the AWS plugin. Which command initializes the working directory and downloads providers?**
+**5. Your Terraform configuration references Azure as the cloud provider. Before you can run `terraform plan`, Terraform needs to download the Azure plugin. Which command initializes the working directory and downloads providers?**
 - A) terraform get
 - B) terraform install
 - C) terraform setup
@@ -77,7 +77,7 @@
 
 <hr>
 
-**6. Your company grows and you find yourself copying the same Terraform code for VPCs, EC2 instances, and security groups across multiple projects. Which Terraform feature lets you package reusable infrastructure components that can be called with different inputs?**
+**6. Your company grows and you find yourself copying the same Terraform code for VNets, Azure Virtual Machines, and security groups across multiple projects. Which Terraform feature lets you package reusable infrastructure components that can be called with different inputs?**
 - A) Workspace
 - B) Backend
 - C) Provider
@@ -93,21 +93,21 @@
 <hr>
 
 **7. Your team stores Terraform state locally on each developer machine. Two developers ran `terraform apply` at the same time targeting the same environment and it corrupted the state file. How do you prevent this in the future?**
-- A) Use remote state in S3 with DynamoDB state locking
+- A) Use remote state in Azure Storage with Azure Blob storage leasing
 - B) Use terraform plan instead of apply
 - C) Email the team before running terraform apply
 - D) Use a single developer machine for all applies
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Correct Answer:</b> A (Use remote state in S3 with DynamoDB state locking)
+<b>Correct Answer:</b> A (Use remote state in Azure Storage with Azure Blob storage leasing)
 <br/>
-<b>Explanation:</b> Remote state in S3 with a DynamoDB lock table is the standard solution. When one developer runs apply, the DynamoDB table creates a lock entry preventing any other apply from running simultaneously. The S3 backend also makes state accessible to all team members consistently.
+<b>Explanation:</b> Remote state in Azure Storage with a Azure Blob storage lease is the standard solution. When one developer runs apply, the Azure Storage creates a lease entry preventing any other apply from running simultaneously. The Azure Storage backend also makes state accessible to all team members consistently.
 </details>
 
 <hr>
 
-**8. Your Terraform configuration creates an EC2 instance, and you want to print the public IP address of that instance after it is created so your team can use it. Which Terraform feature exposes values after apply?**
+**8. Your Terraform configuration creates an Azure Virtual Machine, and you want to print the public IP address of that instance after it is created so your team can use it. Which Terraform feature exposes values after apply?**
 - A) Variable
 - B) Data Source
 - C) Output
@@ -122,7 +122,7 @@
 
 <hr>
 
-**9. Your manager says instead of clicking around the AWS console to create infrastructure, we should define everything as code so it is repeatable and version controlled. Which tool is designed specifically for this?**
+**9. Your manager says instead of clicking around the Azure portal to create infrastructure, we should define everything as code so it is repeatable and version controlled. Which tool is designed specifically for this?**
 - A) Chef
 - B) Terraform
 - C) Ansible
@@ -132,7 +132,7 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> B (Terraform)
 <br/>
-<b>Explanation:</b> Terraform is an open source Infrastructure as Code tool by HashiCorp. It lets you define cloud infrastructure using configuration files that can be versioned, reviewed, and reused. Terraform supports AWS, Azure, GCP, and hundreds of other providers through its plugin system.
+<b>Explanation:</b> Terraform is an open source Infrastructure as Code tool by HashiCorp. It lets you define cloud infrastructure using configuration files that can be versioned, reviewed, and reused. Terraform supports Azure, Azure, GCP, and hundreds of other providers through its plugin system.
 </details>
 
 <hr>
@@ -154,7 +154,7 @@
 
 ## Medium Level
 
-**11. Your team uses Terraform to manage AWS infrastructure. A developer added a new S3 bucket directly in the AWS console without going through Terraform. Now `terraform plan` shows the bucket does not exist and wants to create a duplicate. How do you resolve this without deleting the manually created bucket?**
+**11. Your team uses Terraform to manage Azure infrastructure. A developer added a new Azure Storage container directly in the Azure portal without going through Terraform. Now `terraform plan` shows the bucket does not exist and wants to create a duplicate. How do you resolve this without deleting the manually created bucket?**
 - A) Write the resource block in Terraform and run terraform import to bring it under Terraform management
 - B) Delete the bucket and let Terraform recreate it
 - C) Ignore it and use the console bucket
@@ -169,7 +169,7 @@
 
 <hr>
 
-**12. Your Terraform module creates an EC2 instance that depends on a security group. Terraform usually infers dependencies automatically but you need to explicitly declare that the EC2 instance must wait for an S3 bucket policy to be applied first even though there is no direct reference. Which argument handles explicit dependencies?**
+**12. Your Terraform module creates an Azure Virtual Machine that depends on a security group. Terraform usually infers dependencies automatically but you need to explicitly declare that the Azure Virtual Machine must wait for an Azure Storage container policy to be applied first even though there is no direct reference. Which argument handles explicit dependencies?**
 - A) lifecycle
 - B) depends_on
 - C) for_each
@@ -184,7 +184,7 @@
 
 <hr>
 
-**13. Your team stores Terraform state in a local file by default, but this causes problems when multiple team members run Terraform simultaneously. You want to store state in an S3 bucket so everyone shares the same state. Which Terraform block configures this?**
+**13. Your team stores Terraform state in a local file by default, but this causes problems when multiple team members run Terraform simultaneously. You want to store state in an Azure Storage container so everyone shares the same state. Which Terraform block configures this?**
 - A) provider
 - B) module
 - C) variable
@@ -194,7 +194,7 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> D (backend)
 <br/>
-<b>Explanation:</b> The backend block in Terraform configures where state is stored and how operations are performed. Using the S3 backend stores your terraform.tfstate file in an S3 bucket enabling shared state across your team. You can also enable state locking using a DynamoDB table to prevent concurrent modifications.
+<b>Explanation:</b> The backend block in Terraform configures where state is stored and how operations are performed. Using the Azure Storage backend stores your terraform.tfstate file in an Azure Storage container enabling shared state across your team. You can also enable state locking using a Azure Storage table to prevent concurrent modifications.
 </details>
 
 <hr>
@@ -259,7 +259,7 @@
 
 <hr>
 
-**18. Your team wants to create multiple identical S3 buckets with different names from a single resource block using a list of bucket names. Which Terraform meta argument iterates over a map or set to create multiple resource instances?**
+**18. Your team wants to create multiple identical Azure Storage containers with different names from a single resource block using a list of bucket names. Which Terraform meta argument iterates over a map or set to create multiple resource instances?**
 - A) depends_on
 - B) count
 - C) for_each
@@ -274,7 +274,7 @@
 
 <hr>
 
-**19. Your team created an AWS EC2 instance manually in the console and now wants to bring it under Terraform management without destroying and recreating it. Which Terraform command adds an existing resource to the state file?**
+**19. Your team created an Azure Azure Virtual Machine manually in the console and now wants to bring it under Terraform management without destroying and recreating it. Which Terraform command adds an existing resource to the state file?**
 - A) terraform taint
 - B) terraform state add
 - C) terraform import
@@ -289,7 +289,7 @@
 
 <hr>
 
-**20. Your teammate ran `terraform apply` and now the state file shows resources that no longer exist in AWS because someone deleted them manually from the console. You want to update the state to reflect reality without destroying and recreating everything. Which command refreshes the state?**
+**20. Your teammate ran `terraform apply` and now the state file shows resources that no longer exist in Azure because someone deleted them manually from the console. You want to update the state to reflect reality without destroying and recreating everything. Which command refreshes the state?**
 - A) terraform taint
 - B) terraform refresh
 - C) terraform sync
@@ -309,14 +309,14 @@
 **21. Your team has a Terraform module that creates an RDS database and returns the connection string as an output. However the connection string contains the database password. How do you prevent Terraform from showing this value in plain text in the CLI output and in the state file?**
 - A) Mark the output with sensitive equals true
 - B) Store the password in a variable with no default
-- C) Encrypt the output using a KMS key
+- C) Encrypt the output using a Azure Key Vault key
 - D) Use a local value instead of output
 
 <details>
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> A (Mark the output with sensitive equals true)
 <br/>
-<b>Explanation:</b> Marking an output as `sensitive = true` tells Terraform to redact the value in CLI output replacing it with a sensitive value placeholder. However the value is still stored in the state file. For true secret protection use a secrets manager like AWS Secrets Manager or HashiCorp Vault and only store references not actual secrets in state.
+<b>Explanation:</b> Marking an output as `sensitive = true` tells Terraform to redact the value in CLI output replacing it with a sensitive value placeholder. However the value is still stored in the state file. For true secret protection use a secrets manager like Azure Azure Key Vault or HashiCorp Vault and only store references not actual secrets in state.
 </details>
 
 <hr>
@@ -336,7 +336,7 @@
 
 <hr>
 
-**23. Your organization uses Terraform Cloud and wants to enforce a policy that no S3 bucket can be created without server side encryption enabled. Which HashiCorp tool lets you write these governance policies as code?**
+**23. Your organization uses Terraform Cloud and wants to enforce a policy that no Azure Storage container can be created without server side encryption enabled. Which HashiCorp tool lets you write these governance policies as code?**
 - A) Checkov
 - B) Sentinel
 - C) Terraform Validate
@@ -351,7 +351,7 @@
 
 <hr>
 
-**24. Your Terraform configuration uses count to create 5 EC2 instances. You need to remove only the third instance which is count index 2 without affecting the others. What is the safest approach?**
+**24. Your Terraform configuration uses count to create 5 Azure Virtual Machines. You need to remove only the third instance which is count index 2 without affecting the others. What is the safest approach?**
 - A) Use terraform state rm to remove only that instance
 - B) Reduce count to 4
 - C) Remove that instance from the list and let Terraform recalculate
@@ -406,12 +406,12 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> A (It tracks the mapping between your configuration and real world resources and may contain sensitive data like passwords and private keys)
 <br/>
-<b>Explanation:</b> The `terraform.tfstate` file is Terraforms source of truth for what infrastructure it manages. It records resource IDs, attributes, and sometimes sensitive values like database passwords. Committing state to a public repo exposes infrastructure details and secrets. Always use a remote backend like S3 with encryption and restrict access.
+<b>Explanation:</b> The `terraform.tfstate` file is Terraforms source of truth for what infrastructure it manages. It records resource IDs, attributes, and sometimes sensitive values like database passwords. Committing state to a public repo exposes infrastructure details and secrets. Always use a remote backend like Azure Storage with encryption and restrict access.
 </details>
 
 <hr>
 
-**28. Your Terraform configuration creates resources in a specific order based on dependencies. You notice that a null_resource needs to run a provisioner script every time a certain EC2 instance is replaced. Which argument inside null_resource triggers re-execution when a dependency changes?**
+**28. Your Terraform configuration creates resources in a specific order based on dependencies. You notice that a null_resource needs to run a provisioner script every time a certain Azure Virtual Machine is replaced. Which argument inside null_resource triggers re-execution when a dependency changes?**
 - A) depends_on
 - B) lifecycle
 - C) triggers
@@ -421,7 +421,7 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> C (triggers)
 <br/>
-<b>Explanation:</b> The `triggers` argument in `null_resource` is a map of values that when changed cause the null_resource to be replaced and its provisioners to re run. By referencing the EC2 instance ID in triggers the null_resource will re execute its provisioner script every time the instance is replaced providing a hook for configuration management tasks.
+<b>Explanation:</b> The `triggers` argument in `null_resource` is a map of values that when changed cause the null_resource to be replaced and its provisioners to re run. By referencing the Azure Virtual Machine ID in triggers the null_resource will re execute its provisioner script every time the instance is replaced providing a hook for configuration management tasks.
 </details>
 
 <hr>
@@ -436,22 +436,22 @@
 <summary><b>View Answer</b></summary>
 <b>Correct Answer:</b> B (An argument that requires replacement was changed such as the instance type or availability zone)
 <br/>
-<b>Explanation:</b> Certain resource arguments are immutable after creation. Changing them forces Terraform to destroy and recreate the resource. For example changing the availability_zone of an EC2 instance or the engine of an RDS instance triggers replacement. The plan output marks these changes with the replace symbol so always read plan output carefully.
+<b>Explanation:</b> Certain resource arguments are immutable after creation. Changing them forces Terraform to destroy and recreate the resource. For example changing the availability_zone of an Azure Virtual Machine or the engine of an RDS instance triggers replacement. The plan output marks these changes with the replace symbol so always read plan output carefully.
 </details>
 
 <hr>
 
-**30. Your infrastructure team uses Terraform but developers keep making manual changes in the AWS console causing drift between actual infrastructure and Terraform state. These drift events caused 2 incidents when `terraform apply` overwrote manual fixes. How do you detect and prevent drift systematically?**
-- A) Lock the AWS account
-- B) Run terraform plan on a schedule in CI and alert on any detected drift. Enforce SCPs in AWS Organizations blocking direct console changes to production resources. All changes must go through Terraform pull requests.
+**30. Your infrastructure team uses Terraform but developers keep making manual changes in the Azure portal causing drift between actual infrastructure and Terraform state. These drift events caused 2 incidents when `terraform apply` overwrote manual fixes. How do you detect and prevent drift systematically?**
+- A) Lock the Azure subscription
+- B) Run terraform plan on a schedule in CI and alert on any detected drift. Enforce SCPs in Azure Policy / Management Groups blocking direct console changes to production resources. All changes must go through Terraform pull requests.
 - C) Ask developers not to use the console
 - D) Use terraform refresh only
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Correct Answer:</b> B (Run terraform plan on a schedule in CI and alert on any detected drift. Enforce SCPs in AWS Organizations blocking direct console changes to production resources. All changes must go through Terraform pull requests.)
+<b>Correct Answer:</b> B (Run terraform plan on a schedule in CI and alert on any detected drift. Enforce SCPs in Azure Policy / Management Groups blocking direct console changes to production resources. All changes must go through Terraform pull requests.)
 <br/>
-<b>Explanation:</b> Systematic drift prevention requires both detection and prevention. Scheduled `terraform plan` runs in CI detect when actual infrastructure diverges from state and alert the team. AWS Organizations Service Control Policies block console modifications to production resources at the IAM policy level making Terraform the only path for infrastructure changes. This two-layer approach eliminates both accidental and intentional drift.
+<b>Explanation:</b> Systematic drift prevention requires both detection and prevention. Scheduled `terraform plan` runs in CI detect when actual infrastructure diverges from state and alert the team. Azure Policy / Management Groups Service Control Policies block console modifications to production resources at the IAM policy level making Terraform the only path for infrastructure changes. This two-layer approach eliminates both accidental and intentional drift.
 </details>
 
 <hr>
@@ -471,7 +471,7 @@
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Explanation:</b> Terraform workspaces create isolated state instances within the same backend. Commands: terraform workspace new/select/list/delete. Use case: managing multiple environments (dev/staging/prod) from same configuration. Access current workspace in config: ${terraform.workspace}. Limitations: 1) All workspaces share the same configuration and providers, 2) Not suitable for environments with different infrastructure needs, 3) Backend configuration is shared — same S3 bucket, 4) Easy to accidentally apply to wrong workspace, 5) Not supported in all backends. Better alternative for most teams: separate directories per environment with separate state files providing true isolation. Use workspaces only for truly identical environments where only variable values differ.
+<b>Explanation:</b> Terraform workspaces create isolated state instances within the same backend. Commands: terraform workspace new/select/list/delete. Use case: managing multiple environments (dev/staging/prod) from same configuration. Access current workspace in config: ${terraform.workspace}. Limitations: 1) All workspaces share the same configuration and providers, 2) Not suitable for environments with different infrastructure needs, 3) Backend configuration is shared — same Azure Storage container, 4) Easy to accidentally apply to wrong workspace, 5) Not supported in all backends. Better alternative for most teams: separate directories per environment with separate state files providing true isolation. Use workspaces only for truly identical environments where only variable values differ.
 </details>
 
 <hr>
@@ -489,7 +489,7 @@
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Explanation:</b> Terraform state (terraform.tfstate) maps your configuration to real-world resources. It's important because: 1) Tracks which resources Terraform manages, 2) Stores metadata about resources (IDs, attributes) needed for updates, 3) Used for dependency resolution — knows the order to create/destroy resources, 4) Detects drift between configuration and actual infrastructure, 5) Enables terraform plan to show accurate changes. Without state Terraform couldn't know if a resource already exists. Problems: state file can contain sensitive values, must be kept in sync with reality, concurrent modifications cause conflicts. Solution: remote state backends with locking (S3 + DynamoDB).
+<b>Explanation:</b> Terraform state (terraform.tfstate) maps your configuration to real-world resources. It's important because: 1) Tracks which resources Terraform manages, 2) Stores metadata about resources (IDs, attributes) needed for updates, 3) Used for dependency resolution — knows the order to create/destroy resources, 4) Detects drift between configuration and actual infrastructure, 5) Enables terraform plan to show accurate changes. Without state Terraform couldn't know if a resource already exists. Problems: state file can contain sensitive values, must be kept in sync with reality, concurrent modifications cause conflicts. Solution: remote state backends with locking (Azure Storage + Azure Storage).
 </details>
 
 <hr>
@@ -516,7 +516,7 @@
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Explanation:</b> `terraform init` initializes the working directory. It performs: 1) Backend initialization — configures the specified backend (S3, Terraform Cloud) for state storage, 2) Provider installation — downloads and installs provider plugins specified in required_providers, 3) Module installation — downloads modules from registry or remote sources, 4) Creates .terraform directory for downloaded providers/modules, 5) Creates .terraform.lock.hcl for provider version locking. Must be run: when first working with a configuration, after adding new providers or modules, when changing backend configuration. Run terraform init -upgrade to update providers to latest allowed version.
+<b>Explanation:</b> `terraform init` initializes the working directory. It performs: 1) Backend initialization — configures the specified backend (Azure Storage, Terraform Cloud) for state storage, 2) Provider installation — downloads and installs provider plugins specified in required_providers, 3) Module installation — downloads modules from registry or remote sources, 4) Creates .terraform directory for downloaded providers/modules, 5) Creates .terraform.lock.hcl for provider version locking. Must be run: when first working with a configuration, after adding new providers or modules, when changing backend configuration. Run terraform init -upgrade to update providers to latest allowed version.
 </details>
 
 <hr>
@@ -534,7 +534,7 @@
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Explanation:</b> Output values expose resource attributes from your Terraform configuration for use by other configurations or for displaying information after apply. Defined in outputs.tf: output instance_ip { value = aws_instance.web.public_ip }. Uses: 1) Display information after apply (terraform output), 2) Pass values to other modules (root module outputs accessible via terraform_remote_state), 3) Used by CI/CD to get resource IDs/endpoints, 4) Integration between configurations. Mark as sensitive = true to mask sensitive values in output. In modules, outputs are accessed via module.module_name.output_name. terraform output -json returns all outputs as JSON for scripting.
+<b>Explanation:</b> Output values expose resource attributes from your Terraform configuration for use by other configurations or for displaying information after apply. Defined in outputs.tf: output instance_ip { value = azurerm_linux_virtual_machine.web.public_ip_address }. Uses: 1) Display information after apply (terraform output), 2) Pass values to other modules (root module outputs accessible via terraform_remote_state), 3) Used by CI/CD to get resource IDs/endpoints, 4) Integration between configurations. Mark as sensitive = true to mask sensitive values in output. In modules, outputs are accessed via module.module_name.output_name. terraform output -json returns all outputs as JSON for scripting.
 </details>
 
 <hr>
@@ -552,7 +552,7 @@
 
 <details>
 <summary><b>View Answer</b></summary>
-<b>Explanation:</b> A provider is a plugin that implements resource types for a specific API or service. Providers handle authentication, API calls, and resource lifecycle. There are 3000+ providers including: cloud providers (AWS, Azure, GCP), Kubernetes, databases (MySQL, PostgreSQL), monitoring (Datadog, PagerDuty), DNS (Route53, Cloudflare), and more. Configure in provider block: provider aws { region = var.aws_region }. Specify versions with required_providers block. Providers are downloaded during terraform init from the Terraform Registry. Custom providers can be built using the Terraform Plugin SDK.
+<b>Explanation:</b> A provider is a plugin that implements resource types for a specific API or service. Providers handle authentication, API calls, and resource lifecycle. There are 3000+ providers including: cloud providers (Azure, Azure, GCP), Kubernetes, databases (MySQL, PostgreSQL), monitoring (Datadog, PagerDuty), DNS (Azure DNS, Cloudflare), and more. Configure in provider block: provider azurerm { region = var.location }. Specify versions with required_providers block. Providers are downloaded during terraform init from the Terraform Registry. Custom providers can be built using the Terraform Plugin SDK.
 </details>
 
 <hr>
