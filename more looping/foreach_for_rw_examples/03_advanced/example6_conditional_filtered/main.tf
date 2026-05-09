@@ -1,6 +1,5 @@
 # =============================================================
 # EXAMPLE 6 – Conditional resource creation: filtered maps
-# Level: Advanced
 # Concept: for expressions to filter a map before passing to
 #          for_each, so only matching resources are created.
 # =============================================================
