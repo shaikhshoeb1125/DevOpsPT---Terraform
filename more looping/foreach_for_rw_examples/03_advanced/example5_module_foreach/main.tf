@@ -1,18 +1,15 @@
 # =============================================================
 # EXAMPLE 5 – Dynamic resource creation using for_each + module
-# Level: Advanced
 # Concept: Calling a child module once per map entry
 # =============================================================
 #
 # PATTERN: Module-per-instance
-# ─────────────────────────────
-# Instead of replicating resource blocks in the root module,
-# you call a *module* with for_each.  The module encapsulates
-# the entire "unit" of infrastructure (VNet + NSG + subnets).
 #
-# Benefit: standardisation and DRY code across many environments.
+# Instead of replicating resource blocks in the root module,
+# you call a module with for_each.  The module encapsulates
+# the entire "unit" of infrastructure (VNet + NSG + subnets).
 
-# ── Variables ────────────────────────────────────────────────
+########### Variables ###########
 
 variable "environments" {
   description = "Map of environment name → its network configuration."
@@ -48,7 +45,7 @@ variable "environments" {
   }
 }
 
-# ── Module Call ───────────────────────────────────────────────
+###########Module Call ###########
 #
 # for_each on a module call creates ONE MODULE INSTANCE
 # per entry.  Each instance manages its own set of resources
@@ -59,7 +56,7 @@ variable "environments" {
 #   module.network["prod"].azurerm_virtual_network.this
 
 module "network" {
-  source = "./modules/network" # child module defined below
+  source = "./modules/network"
 
   for_each = var.environments
 
@@ -70,7 +67,7 @@ module "network" {
   subnets       = each.value.subnets
 }
 
-# ── Outputs ───────────────────────────────────────────────────
+########### Outputs###########
 
 output "vnet_ids_by_env" {
   description = "VNet resource IDs per environment."
