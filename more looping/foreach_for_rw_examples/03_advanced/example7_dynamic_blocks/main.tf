@@ -1,12 +1,11 @@
 # =============================================================
 # EXAMPLE 7 – for_each combined with dynamic blocks
-# Level: Advanced
 # Concept: dynamic{} blocks inside a for_each resource allow
 #          a variable number of sub-blocks per resource instance.
 # =============================================================
 #
 # REAL-WORLD PROBLEM:
-# Each NSG may need a *different number* of security rules.
+# Each NSG may need a different number of security rules.
 # Hard-coding ingress_security_rule blocks doesn't scale.
 #
 # PATTERN: dynamic block + for expression inside for_each
