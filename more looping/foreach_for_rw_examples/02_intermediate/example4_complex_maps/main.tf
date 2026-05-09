@@ -1,11 +1,8 @@
 # =============================================================
-# EXAMPLE 4 – Linux VMs via complex map(object) variables
-# Level: Intermediate
 # Concept: Deeply nested objects, optional() with defaults
-#          (Terraform 1.3+)
 # =============================================================
 
-# ── Variables ────────────────────────────────────────────────
+########### Variables ###########
 
 variable "resource_group_name" {
   description = "Shared resource group."
@@ -58,7 +55,7 @@ variable "virtual_machines" {
   }
 }
 
-# ── Resources ────────────────────────────────────────────────
+########### Resources ###########
 
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name
@@ -129,8 +126,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags = merge({ managed_by = "terraform" }, each.value.tags)
 }
 
-# ── Outputs ───────────────────────────────────────────────────
-
+########### Outputs ###########
 output "vm_private_ips" {
   description = "Private IPs of the deployed VMs."
   value = {
