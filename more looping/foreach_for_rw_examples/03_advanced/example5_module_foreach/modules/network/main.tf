@@ -3,7 +3,7 @@
 # Resources: Resource Group + VNet + NSG + Subnets
 # =============================================================
 
-# ── Variables ────────────────────────────────────────────────
+########### Variables ###########
 
 variable "env_name" {
   description = "Environment label (dev / prod / …)."
@@ -29,7 +29,7 @@ variable "subnets" {
   }))
 }
 
-# ── Resources ────────────────────────────────────────────────
+########### Resources ###########
 
 resource "azurerm_resource_group" "this" {
   name     = "rg-${var.env_name}"
@@ -82,7 +82,7 @@ resource "azurerm_subnet_network_security_group_association" "this" {
   network_security_group_id = azurerm_network_security_group.this.id
 }
 
-# ── Outputs ───────────────────────────────────────────────────
+########### Outputs ###########
 
 output "vnet_id" {
   description = "The VNet resource ID."
