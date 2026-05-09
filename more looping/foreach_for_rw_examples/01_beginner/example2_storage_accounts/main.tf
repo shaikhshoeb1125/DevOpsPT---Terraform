@@ -13,7 +13,7 @@
 #   each.key   → the map key   (e.g. "logs")
 #   each.value → the map value (e.g. "Standard_LRS")
 
-# ── Input Variables ──────────────────────────────────────────
+########### Input Variables ###########
 
 variable "resource_group_name" {
   description = "Resource group that will hold the storage accounts."
@@ -27,7 +27,7 @@ variable "location" {
   default     = "West India"
 }
 
-# Map: name → SKU (account tier)
+
 variable "storage_accounts" {
   description = "Map of short name → SKU for each storage account."
   type        = map(string)
@@ -38,21 +38,22 @@ variable "storage_accounts" {
   }
 }
 
-# ── Resources ────────────────────────────────────────────────
+########### Resources ###########
 
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_storage_account" "this" {
-  # Iterate over each entry in the map.
-  # each.key   = short name  (logs / backups / application)
-  # each.value = SKU string  (Standard_LRS / Standard_GRS / …)
-  for_each = var.storage_accounts
 
-  # Storage account names must be globally unique, 3-24 lower-case
-  # alphanumeric chars.  We add a fixed suffix to avoid collisions.
+# Iterate over each entry in the map.
+# each.key   = short name  (logs / backups / application)
+# each.value = SKU string  (Standard_LRS / Standard_GRS / …)
+# Storage account names must be globally unique, 3-24 lower-case
+# We add a fixed suffix to avoid collisions.
+
+resource "azurerm_storage_account" "this" {  
+for_each = var.storage_accounts
   name                     = "st${each.key}practise001"
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
@@ -66,7 +67,7 @@ resource "azurerm_storage_account" "this" {
   }
 }
 
-# ── Outputs ───────────────────────────────────────────────────
+########### Outputs ###########
 
 output "storage_account_primary_endpoints" {
   description = "Map of short name → primary blob endpoint."
